@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Radio, Loader2 } from 'lucide-react';
-// IMPORTANTE: Importamos LiveChat, que es el que está en components
+// IMPORTANTE: Asegúrate de que apunte a LiveChat en la carpeta components
 import LiveChat from '../../components/LiveChat';
 
 export default function AdminLive() {
@@ -40,8 +40,10 @@ export default function AdminLive() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] p-4 lg:p-0">
-      <div className="flex items-center justify-between mb-6 text-white uppercase italic font-bold">
-        <h1><Radio className="inline mr-2 text-red-500 animate-pulse" /> Monitor Admin</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold text-white uppercase italic tracking-tighter">
+          <Radio className="inline mr-2 text-red-500 animate-pulse" /> Monitor Admin
+        </h1>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 min-h-0">
         <div className="lg:col-span-2 relative bg-black rounded-3xl overflow-hidden border border-white/5 shadow-2xl">
