@@ -1,79 +1,63 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Send, User as UserIcon } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 
 export default function LiveChat({ user }: { user: any }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchMessages();
-
-    // SUSCRIPCIÓN EN TIEMPO REAL
-    const channel = supabase
-      .channel('public:chat_messages')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, 
-      (payload) => {
-        setMessages((prev) => [...prev, payload.new]);
-      })
-      .subscribe();
-
+    const channel = supabase.channel('chat_realtime').on('postgres_changes', 
+      { event: 'INSERT', schema: 'public', table: 'chat_messages' }, 
+      (payload) => { setMessages((prev) => [...prev, payload.new]); }
+    ).subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   const fetchMessages = async () => {
     const { data } = await supabase.from('chat_messages').select('*').order('created_at', { ascending: true }).limit(50);
     if (data) setMessages(data);
+    setLoading(false);
   };
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !user) return;
 
-    await supabase.from('chat_messages').insert([{
-      content: newMessage,
-      user_id: user.id,
-      username: user.email.split('@')[0] // Nombre temporal basado en su correo
-    }]);
+    // EL ARREGLO: Usamos 'message' (columna real) y quitamos 'username' y 'content' (columnas falsas)
+    const { error } = await supabase.from('chat_messages').insert([
+      { user_id: user.id, message: newMessage.trim() }
+    ]);
 
-    setNewMessage('');
+    if (error) console.error("Error:", error.message);
+    else setNewMessage('');
   };
 
-  return (
-    <div className="flex flex-col h-[500px] bg-zinc-900 rounded-3xl border border-white/5 overflow-hidden shadow-2xl">
-      <div className="p-4 border-b border-white/5 bg-black/20 flex items-center gap-2">
-        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-        <h3 className="font-bold text-white uppercase text-xs tracking-widest">Chat en Vivo</h3>
-      </div>
+  if (loading) return <div className="flex justify-center p-4"><Loader2 className="animate-spin text-emerald-500" /></div>;
 
+  return (
+    <div className="flex flex-col h-full bg-zinc-900">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => (
           <div key={msg.id} className="flex flex-col">
-            <span className="text-[10px] text-emerald-500 font-bold mb-1 ml-1">{msg.username}</span>
-            <div className="bg-black/40 p-3 rounded-2xl rounded-tl-none border border-white/5 max-w-[80%]">
-              <p className="text-sm text-gray-300">{msg.content}</p>
+            <span className="text-[10px] text-emerald-500 font-bold mb-1 uppercase">
+              {msg.user_id === user.id ? 'ADMIN' : 'FAN'}
+            </span>
+            <div className="bg-black/40 p-3 rounded-2xl border border-white/5 max-w-[90%] text-sm text-gray-300">
+              {msg.message}
             </div>
           </div>
         ))}
         <div ref={scrollRef} />
       </div>
-
       <form onSubmit={sendMessage} className="p-4 bg-black/40 border-t border-white/5 flex gap-2">
-        <input 
-          type="text" 
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          className="flex-1 bg-zinc-800 border-none rounded-xl px-4 py-2 text-sm text-white focus:ring-1 focus:ring-emerald-500 outline-none"
-          placeholder="Escribe algo..."
-        />
-        <button type="submit" className="p-2 bg-emerald-500 text-black rounded-xl hover:bg-emerald-600 transition-all">
-          <Send className="w-5 h-5" />
-        </button>
+        <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} className="flex-1 bg-zinc-800 rounded-full px-4 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Escribir..." />
+        <button type="submit" className="p-2 bg-emerald-500 text-black rounded-full hover:bg-emerald-400"><Send size={18} /></button>
       </form>
     </div>
   );
