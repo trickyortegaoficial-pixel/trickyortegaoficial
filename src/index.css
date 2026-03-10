@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos globales */
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #000;
+  color: #fff;
+  margin: 0;
+  padding: 0;
+}
+
+/* Botones neon */
+.btn-primary {
+  @apply bg-neon text-black font-bold px-6 py-3 rounded-full shadow-neon hover:scale-105 transition-transform;
+}
+
+.btn-pink {
+  @apply bg-neonPink text-black font-bold px-6 py-3 rounded-full shadow-neonPink hover:scale-105 transition-transform;
+}
+
+.btn-blue {
+  @apply bg-neonBlue text-black font-bold px-6 py-3 rounded-full shadow-neonBlue hover:scale-105 transition-transform;
+}
+
+/* Enlaces neon */
+a.neon-link {
+  @apply text-neon underline hover:text-neonPink transition-colors;
+}

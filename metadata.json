@@ -1,0 +1,5 @@
+{
+  "name": "Tricky Ortega Official",
+  "description": "Sitio web oficial de Tricky Ortega. Música, videos, comunidad exclusiva y transmisiones en vivo.",
+  "requestFramePermissions": ["camera", "microphone"]
+}
