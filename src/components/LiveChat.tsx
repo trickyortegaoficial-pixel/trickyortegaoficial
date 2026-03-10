@@ -28,29 +28,26 @@ export default function LiveChat({ user }: { user: any }) {
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !user) return;
-
-    // EL ARREGLO: Usamos 'message' (columna real) y quitamos 'username' y 'content' (columnas falsas)
-    const { error } = await supabase.from('chat_messages').insert([
-      { user_id: user.id, message: newMessage.trim() }
-    ]);
-
-    if (error) console.error("Error:", error.message);
+    // USAMOS 'message' Y 'user_id' QUE SON TUS COLUMNAS REALES
+    const { error } = await supabase.from('chat_messages').insert([{ 
+      user_id: user.id, 
+      message: newMessage.trim() 
+    }]);
+    if (error) console.error(error);
     else setNewMessage('');
   };
 
-  if (loading) return <div className="flex justify-center p-4"><Loader2 className="animate-spin text-emerald-500" /></div>;
+  if (loading) return <div className="p-4 text-center"><Loader2 className="animate-spin text-emerald-500 mx-auto" /></div>;
 
   return (
     <div className="flex flex-col h-full bg-zinc-900">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => (
-          <div key={msg.id} className="flex flex-col">
-            <span className="text-[10px] text-emerald-500 font-bold mb-1 uppercase">
+          <div key={msg.id} className="text-sm">
+            <span className="text-emerald-500 font-bold mr-2 uppercase text-[10px]">
               {msg.user_id === user.id ? 'ADMIN' : 'FAN'}
             </span>
-            <div className="bg-black/40 p-3 rounded-2xl border border-white/5 max-w-[90%] text-sm text-gray-300">
-              {msg.message}
-            </div>
+            <span className="text-gray-300">{msg.message}</span>
           </div>
         ))}
         <div ref={scrollRef} />
