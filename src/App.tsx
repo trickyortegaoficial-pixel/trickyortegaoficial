@@ -16,8 +16,10 @@ import Videos from './pages/Videos';
 import History from './pages/History';
 import Projects from './pages/Projects';
 import Community from './pages/Community';
-import LiveStream from './pages/LiveStream';
 import Contact from './pages/Contact';
+
+// EL CAMBIO ESTÁ AQUÍ: Ahora lo buscamos en components
+import LiveStream from './components/LiveStream'; 
 
 // Admin Pages
 import AdminLogin from './pages/admin/AdminLogin';
@@ -29,7 +31,7 @@ import AdminCommunity from './pages/admin/AdminCommunity';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminSubscribers from './pages/admin/AdminSubscribers';
 import AdminHistory from './pages/admin/AdminHistory';
-import AdminLive from './pages/admin/AdminLive'; // <--- IMPORTACIÓN DEL MONITOR
+import AdminLive from './pages/admin/AdminLive'; 
 
 // Layout Público para fans
 const PublicLayout = () => {
@@ -73,7 +75,7 @@ export default function App() {
               <Route path="history" element={<AdminHistory />} />
               <Route path="videos" element={<AdminVideos />} />
               <Route path="projects" element={<AdminProjects />} />
-              <Route path="live" element={<AdminLive />} /> {/* <--- RUTA DEL MONITOR AÑADIDA */}
+              <Route path="live" element={<AdminLive />} /> 
               <Route path="community" element={<AdminCommunity />} />
               <Route path="subscribers" element={<AdminSubscribers />} />
               <Route path="settings" element={<AdminSettings />} />
