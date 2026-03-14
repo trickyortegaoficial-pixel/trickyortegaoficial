@@ -1,21 +1,29 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import { Loader2, BookOpen } from 'lucide-react';
+import { Loader2, ArrowDown } from 'lucide-react';
 
 export default function History() {
-  const [historyText, setHistoryText] = useState('');
+  const [historyData, setHistoryData] = useState({ text: '', imgs: [] });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchHistory = async () => {
-      const { data } = await supabase.from('settings').select('history_text').single();
-      if (data) setHistoryText(data.history_text);
+      // Traemos todos los campos de settings
+      const { data } = await supabase.from('settings').select('*').single();
+      if (data) {
+        setHistoryData({
+          text: data.history_text || '',
+          imgs: [data.history_img_1, data.history_img_2, data.history_img_3]
+        });
+      }
       setLoading(false);
     };
-
     fetchHistory();
   }, []);
+
+  // Dividimos el texto en capítulos
+  const chapters = historyData.text.split('\n\n').filter(text => text.trim() !== '');
 
   if (loading) {
     return (
@@ -26,36 +34,85 @@ export default function History() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="text-center mb-16"
-      >
-        <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-4">
-          HISTORIA<span className="text-emerald-500">.</span>
-        </h1>
-        <div className="flex items-center justify-center gap-2 text-emerald-500 font-bold uppercase tracking-widest text-sm">
-          <BookOpen className="w-4 h-4" />
-          <span>Trayectoria de Tricky Ortega</span>
-        </div>
-      </motion.div>
+    <div className="bg-black text-white">
+      {/* SECCIÓN HERO */}
+      <section className="h-screen flex flex-col items-center justify-center relative overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1 }}
+          className="z-10 text-center"
+        >
+          <h1 className="text-7xl md:text-[12rem] font-black uppercase tracking-tighter leading-none">
+            HI<span className="text-emerald-500">ST</span>ORIA
+          </h1>
+          <p className="text-emerald-500 tracking-[0.5em] font-bold uppercase mt-4 text-sm md:text-base">
+            Tricky Ortega • Sodoma Studio
+          </p>
+        </motion.div>
+        
+        <motion.div 
+          animate={{ y: [0, 10, 0] }} 
+          transition={{ repeat: Infinity, duration: 2 }}
+          className="absolute bottom-10 flex flex-col items-center gap-2 opacity-50"
+        >
+          <span className="text-xs uppercase tracking-widest text-emerald-500">Scroll para explorar</span>
+          <ArrowDown className="w-5 h-5 text-emerald-500" />
+        </motion.div>
+      </section>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4, duration: 1 }}
-        className="bg-zinc-900/50 backdrop-blur-sm border border-white/5 p-8 md:p-12 rounded-3xl"
-      >
-        {/* Usamos white-space: pre-wrap para que respete los saltos de línea que hagas en el Admin */}
-        <p className="text-xl md:text-2xl text-gray-300 leading-relaxed font-light whitespace-pre-wrap">
-          {historyText || "Nuestra historia se está escribiendo... Vuelve pronto para conocer más sobre Sodoma Studio."}
-        </p>
-      </motion.div>
+      {/* CAPÍTULOS DINÁMICOS */}
+      {chapters.map((text, index) => (
+        <section key={index} className="relative min-h-screen flex items-center py-24 overflow-hidden">
+          {/* Fondo Dinámico: Usa la imagen del Admin o una por defecto si está vacío */}
+          <div 
+            className="absolute inset-0 bg-fixed bg-cover bg-center z-0"
+            style={{ 
+              backgroundImage: `url('${historyData.imgs[index] || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17'}')`,
+              filter: 'grayscale(100%) brightness(30%)' 
+            }}
+          />
+          
+          <div className="container mx-auto px-6 z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2">
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.8 }}
+                className="max-w-2xl"
+              >
+                <span className="text-emerald-500 font-black text-7xl md:text-9xl opacity-10 block -mb-8 md:-mb-12">
+                  0{index + 1}
+                </span>
+                <h2 className="text-4xl md:text-7xl font-black uppercase mb-8 leading-tight italic">
+                  Capítulo <span className="text-emerald-500">{['I', 'II', 'III'][index] || 'X'}</span>
+                </h2>
+                <p className="text-xl md:text-3xl text-gray-200 leading-relaxed font-light whitespace-pre-wrap border-l-4 border-emerald-500 pl-8 md:pl-12">
+                  {text}
+                </p>
+              </motion.div>
+            </div>
+          </div>
+          
+          {/* Capa de oscuridad para legibilidad */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/20 to-transparent z-0 pointer-events-none" />
+        </section>
+      ))}
 
-      {/* Decoración visual de fondo */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/10 blur-[120px] rounded-full -z-10" />
+      {/* CIERRE */}
+      <section className="h-[60vh] flex flex-col items-center justify-center text-center px-6 bg-black">
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <h2 className="text-4xl md:text-6xl font-black uppercase mb-8">El juego apenas comienza.</h2>
+          <button className="border-2 border-emerald-500 text-emerald-500 font-bold px-10 py-4 rounded-full text-lg hover:bg-emerald-500 hover:text-black transition-all uppercase tracking-tighter">
+            Volver al Inicio
+          </button>
+        </motion.div>
+      </section>
     </div>
   );
 }
