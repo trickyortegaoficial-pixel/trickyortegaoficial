@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Send, Users, Video, Loader2 } from 'lucide-react';
+import { Send, Users, Video, Loader2, Trash2 } from 'lucide-react';
 
 export default function LiveStream({ adminUser }: { adminUser?: any }) {
   const [messages, setMessages] = useState<any[]>([]);
@@ -15,14 +15,20 @@ export default function LiveStream({ adminUser }: { adminUser?: any }) {
     fetchMessages();
     fetchLiveUrl();
     
+    // SUSCRIPCIÓN MEJORADA: Escucha INSERTS y DELETES
     const subscription = supabase
       .channel('public:chat_messages')
       .on('postgres_changes', { 
-        event: 'INSERT', 
+        event: '*', // Escuchamos todo (Insert y Delete)
         schema: 'public', 
         table: 'chat_messages' 
       }, payload => {
-        setMessages(current => [...current, payload.new]);
+        if (payload.eventType === 'INSERT') {
+          setMessages(current => [...current, payload.new]);
+        } else if (payload.eventType === 'DELETE') {
+          // Si el Admin borra, vaciamos el chat para todos en tiempo real
+          setMessages([]);
+        }
       })
       .subscribe();
 
@@ -69,11 +75,23 @@ export default function LiveStream({ adminUser }: { adminUser?: any }) {
     setNewMessage('');
   };
 
+  // NUEVA FUNCIÓN: PURGAR CHAT
+  const handleClearChat = async () => {
+    if (!window.confirm("¿Limpiar todo el historial del chat, bro? 🦾")) return;
+    
+    // Borramos todos los registros de la tabla
+    const { error } = await supabase
+      .from('chat_messages')
+      .delete()
+      .neq('id', 0); // Selecciona todos los IDs que no sean 0
+
+    if (error) alert("Error al limpiar: " + error.message);
+  };
+
   if (loading) return <div className="h-full flex items-center justify-center bg-black"><Loader2 className="animate-spin text-emerald-500" /></div>;
 
   return (
     <div className="h-full flex flex-col md:flex-row bg-black overflow-hidden">
-      {/* SECCIÓN DE VIDEO: Solo se muestra si NO somos Admin (para no duplicar) */}
       {!adminUser && (
         <div className="flex-1 relative bg-zinc-950 border-r border-white/10">
           <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-red-500/20 text-red-500 px-3 py-1.5 rounded-full backdrop-blur-md border border-red-500/30">
@@ -90,24 +108,41 @@ export default function LiveStream({ adminUser }: { adminUser?: any }) {
         </div>
       )}
 
-      {/* SECCIÓN DE CHAT: Siempre se muestra */}
       <div className={`${adminUser ? 'w-full' : 'w-full md:w-96'} flex flex-col bg-zinc-900/50 backdrop-blur-xl border-l border-white/5`}>
         <div className="p-4 border-b border-white/10 bg-black/40 flex items-center justify-between">
           <h3 className="font-bold text-lg flex items-center gap-2 uppercase tracking-tighter text-white">
             Chat <span className="text-emerald-500">.</span>
           </h3>
-          {adminUser && <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full border border-emerald-500/20 font-black">MODO ADMIN</span>}
+          
+          <div className="flex items-center gap-3">
+            {adminUser && (
+              <>
+                <button 
+                  onClick={handleClearChat}
+                  className="p-2 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                  title="Limpiar conversación"
+                >
+                  <Trash2 size={18} />
+                </button>
+                <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full border border-emerald-500/20 font-black italic">ADMIN</span>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-950/20">
-          {messages.map((msg, i) => (
-            <div key={i} className="text-sm">
-              <span className="font-bold text-emerald-500 mr-2 uppercase tracking-tighter">
-                {msg.profiles?.username || (msg.user_id === adminUser?.id ? 'SODOMA ADMIN' : 'Fan')}
-              </span>
-              <span className="text-gray-300 break-words font-light">{msg.message}</span>
-            </div>
-          ))}
+          {messages.length === 0 ? (
+            <p className="text-center text-[10px] text-zinc-700 uppercase tracking-[0.3em] py-10 italic">Conversación Purgada</p>
+          ) : (
+            messages.map((msg, i) => (
+              <div key={i} className="text-sm animate-in fade-in slide-in-from-bottom-2">
+                <span className="font-black text-emerald-500 mr-2 uppercase text-[10px] tracking-widest">
+                  {msg.profiles?.username || (msg.user_id === adminUser?.id ? 'SODOMA ADMIN' : 'Fan')}
+                </span>
+                <span className="text-gray-300 break-words font-light">{msg.message}</span>
+              </div>
+            ))
+          )}
           <div ref={messagesEndRef} />
         </div>
 
